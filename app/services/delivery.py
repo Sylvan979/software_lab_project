@@ -303,6 +303,47 @@ class DeliveryService(BaseService):
             )
             return task
 
+    # ------------------------------------------------------------------ #
+    # 派单超时兜底（由定时任务调用）
+    # ------------------------------------------------------------------ #
+    def escalate_stale_tasks(self, now: datetime | None = None) -> int:
+        """3 分钟无人抢单则扩大派单范围，达到上限后转人工调度。"""
+        now = now or datetime.now()
+        count = 0
+        for task in self.repos.deliveries.available():
+            if task.deadline is None or now < task.deadline:
+                continue
+            order = self.repos.orders.find(task.order_id)
+            if order is None or order.status is not OrderStatus.PENDING_DELIVERY:
+                continue
+            if task.dispatch_round >= self.settings.dispatch_max_rounds:
+                task.status = DeliveryStatus.MANUAL
+                self.repos.deliveries.update(task)
+                self.notifications.send_many(
+                    [admin.user_id for admin in self.repos.users.admins()],
+                    "配送单转人工调度",
+                    f"订单 {order.order_id} 超过 {task.dispatch_round} 轮仍无人接单",
+                )
+                self.audit.record(
+                    actor_id="system",
+                    actor_role="系统",
+                    action="配送单转人工调度",
+                    target_type="配送单",
+                    target_id=task.task_id,
+                    detail=order.order_id,
+                )
+            else:
+                task.dispatch_round += 1
+                task.deadline = now + timedelta(minutes=self.settings.dispatch_timeout_minutes)
+                self.repos.deliveries.update(task)
+                self.notifications.send_many(
+                    [admin.user_id for admin in self.repos.users.admins()],
+                    "配送单超时未接",
+                    f"订单 {order.order_id} 已扩大派单范围（第 {task.dispatch_round} 轮）",
+                )
+            count += 1
+        return count
+
     def _own_task(self, task_id: str, rider_id: str) -> DeliveryTask:
         task = self.repos.deliveries.get(task_id)
         if task.rider_id != rider_id:
