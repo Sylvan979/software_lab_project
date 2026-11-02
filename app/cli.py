@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime
 
 from app.config import DEFAULT_SETTINGS
 from app.container import AppContext, build_context
@@ -67,8 +68,9 @@ def run_demo(ctx: AppContext) -> int:
     ctx.cart.add_item(uid, ids["dish_a_hot"], 2)
     ctx.cart.add_item(uid, ids["dish_a_rice"], 1)
     summary = ctx.cart.summary(uid)
-    first = ctx.orders.checkout(uid, address.address_id, remark="少辣", idempotency_key="demo-1")
-    repeat = ctx.orders.checkout(uid, address.address_id, remark="少辣", idempotency_key="demo-1")
+    key = f"demo-{datetime.now():%Y%m%d%H%M%S}"
+    first = ctx.orders.checkout(uid, address.address_id, remark="少辣", idempotency_key=key)
+    repeat = ctx.orders.checkout(uid, address.address_id, remark="少辣", idempotency_key=key)
     print(f"购物车商品金额：{summary.goods_amount} 元")
     print(f"订单号：{first.order.order_id}，应付：{first.order.payable_amount} 元")
     print(f"重复提交返回：{repeat.order.order_id}（reused={repeat.reused}）")
