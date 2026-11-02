@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import tkinter as tk
 from tkinter import messagebox, ttk
 
 from app.domain.enums import DeliveryStatus
@@ -10,6 +9,7 @@ from app.services.delivery import EXCEPTION_REASONS
 from app.services.privacy import mask_detail
 from app.ui.base import BaseView
 from app.ui.dialogs import ChoiceDialog
+from app.ui.panels import MessagePanel
 from app.ui.theme import FAINT, GREEN
 from app.ui.widgets import (
     add_row,
@@ -124,25 +124,8 @@ class RiderView(BaseView):
     # 消息
     # ================================================================== #
     def _build_message_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(tab, text="消息")
-        toolbar = ttk.Frame(tab)
-        toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="刷新", command=self.safe_refresh).pack(side="left")
-        ttk.Button(toolbar, text="全部标为已读", command=self._mark_all_read).pack(
-            side="left", padx=6
-        )
-        self.msg_frame, self.msg_tree = make_table(
-            tab,
-            [
-                ("time", "时间", 110),
-                ("title", "标题", 160),
-                ("body", "内容", 480),
-                ("read", "状态", 60),
-            ],
-            height=15,
-        )
-        self.msg_frame.pack(fill="both", expand=True)
+        self.message_panel = MessagePanel(self.notebook, self.ctx, self.user_id, self.app)
+        self.notebook.add(self.message_panel, text="消息")
 
     # ================================================================== #
     # 操作
@@ -202,11 +185,6 @@ class RiderView(BaseView):
                 "异常已上报，平台将介入处理",
             )
 
-    def _mark_all_read(self) -> None:
-        self.ctx.notifications.mark_all_read(self.user_id)
-        self.safe_refresh()
-        self.app.refresh_badge()
-
     # ================================================================== #
     # 刷新
     # ================================================================== #
@@ -262,15 +240,7 @@ class RiderView(BaseView):
         elif self.mine_tree.get_children():
             self.mine_tree.selection_set(self.mine_tree.get_children()[0])
         self._show_task()
-
-        clear_tree(self.msg_tree)
-        for note in self.ctx.notifications.list_for(self.user_id):
-            add_row(
-                self.msg_tree,
-                note.notification_id,
-                (fmt_time(note.created_at), note.title, note.body, "已读" if note.read else "未读"),
-                tag=None if note.read else "done",
-            )
+        self.message_panel.refresh()
 
     def _show_task(self) -> None:
         task_id = selected_id(self.mine_tree)

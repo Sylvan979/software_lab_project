@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from app.domain.models import Notification
 from app.exceptions import PermissionDeniedError
-from app.repository.repositories import Repositories
 from app.services.base import BaseService
 
 

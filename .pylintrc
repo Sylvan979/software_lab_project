@@ -1,0 +1,27 @@
+# Pylint 配置（实验三代码规范检查）
+#
+# 保留的高价值规则：未定义名称、未使用导入/变量、异常捕获范围、
+# 行宽、类型检查写法、导入位置等。
+# 关闭的规则均为分层架构下的结构性提示，不代表缺陷：
+# - 领域实体天然包含较多字段（Order 有 32 个属性）；
+# - 服务方法使用显式关键字参数装配依赖（如 checkout 的 5 个参数）；
+# - Tkinter 视图不可避免地带有多层继承；
+# - 演示数据、命令行演示与编码器等编排代码较长；
+# - 不同模块的构造函数装配、退款表格渲染存在少量同构代码。
+
+[MAIN]
+py-version = 3.11
+
+[MESSAGES CONTROL]
+disable =
+    missing-class-docstring,
+    missing-function-docstring,
+    too-many-instance-attributes,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-many-ancestors,
+    too-many-locals,
+    too-many-statements,
+    too-many-return-statements,
+    too-few-public-methods,
+    duplicate-code

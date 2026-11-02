@@ -6,11 +6,17 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from app.domain.enums import OrderStatus, UserRole
-from app.domain.models import Address, Order, OrderAddress, OrderItem, StatusChange
+from app.domain.models import (
+    Address,
+    Order,
+    OrderAddress,
+    OrderItem,
+    Review,
+    StatusChange,
+)
 from app.domain.pricing import calculate_amounts, delivery_fee_for, distance_km
 from app.exceptions import (
     ConflictError,
-    NotFoundError,
     OutOfRangeError,
     PermissionDeniedError,
     ValidationError,
@@ -66,7 +72,7 @@ class OrderService(BaseService):
         now: datetime | None = None,
     ) -> CheckoutResult:
         now = now or datetime.now()
-        customer = self.require_customer(customer_id)
+        self.require_customer(customer_id)
         if idempotency_key:
             existing = self.repos.orders.find_by_idempotency(customer_id, idempotency_key)
             if existing is not None:
@@ -243,7 +249,9 @@ class OrderService(BaseService):
     # ------------------------------------------------------------------ #
     # 商家操作
     # ------------------------------------------------------------------ #
-    def merchant_accept(self, order_id: str, merchant_id: str, *, now: datetime | None = None) -> Order:
+    def merchant_accept(
+        self, order_id: str, merchant_id: str, *, now: datetime | None = None
+    ) -> Order:
         now = now or datetime.now()
         order = self._merchant_order(order_id, merchant_id)
         if order.status is OrderStatus.PREPARING:
@@ -319,7 +327,9 @@ class OrderService(BaseService):
     # ------------------------------------------------------------------ #
     # 顾客收货与评价
     # ------------------------------------------------------------------ #
-    def confirm_receipt(self, order_id: str, customer_id: str, *, now: datetime | None = None) -> Order:
+    def confirm_receipt(
+        self, order_id: str, customer_id: str, *, now: datetime | None = None
+    ) -> Order:
         order = self._own_order(order_id, customer_id)
         if order.status is OrderStatus.COMPLETED:
             return order
@@ -356,8 +366,6 @@ class OrderService(BaseService):
             raise ValidationError("评分需在 1~5 之间")
         if len(content) > 200:
             raise ValidationError("评价内容不能超过 200 个字符")
-        from app.domain.models import Review
-
         review = Review(
             review_id=self.repos.db.next_id("REV"),
             order_id=order_id,
@@ -408,7 +416,7 @@ class OrderService(BaseService):
             self.repos.users.update(merchant)
         try:
             self.payments.refund(order, now=now)
-        except Exception:  # noqa: BLE001 - 无支付记录时仍应取消订单，并留待人工核对
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             pass
         self.lifecycle.release_stock(order)
         order.cancel_reason = "超时未接单，系统自动取消"

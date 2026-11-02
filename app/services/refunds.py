@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from app.domain.enums import OrderStatus, RefundStatus, ResponsibleParty, UserRole
-from app.domain.models import Order, RefundRequest
+from app.domain.models import RefundRequest
 from app.exceptions import ConflictError, PermissionDeniedError, ValidationError
 from app.repository.repositories import Repositories
 from app.services.audit import AuditService
@@ -226,7 +226,7 @@ class RefundService(BaseService):
                         now=now,
                     )
                     count += 1
-                except Exception:  # noqa: BLE001 - 资金异常时保持待处理并告警
+                except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
                     self.notifications.send_many(
                         [admin.user_id for admin in self.repos.users.admins()],
                         "退款执行失败",

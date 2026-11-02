@@ -7,7 +7,6 @@ from tkinter import messagebox, ttk
 
 from app.domain.enums import UserRole
 from app.exceptions import DomainError
-from app.ui.theme import BRAND, FAINT, MUTED
 from app.ui.widgets import add_field
 
 DEMO_DATA = (
@@ -107,7 +106,7 @@ class LoginView(ttk.Frame):
         add_field(tab, 3, 0, "验证码", self.reg_code, width=24)
 
         ttk.Button(
-            tab, text="注册并登录", style="Accent.TButton", command=self._register
+            tab, text="注册并登录", style="Accent.TButton", command=self._do_register
         ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(14, 0))
 
     # ------------------------------------------------------------------ #
@@ -132,12 +131,12 @@ class LoginView(ttk.Frame):
         except DomainError as exc:
             messagebox.showerror("登录失败", str(exc), parent=self)
             return
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             messagebox.showerror("系统错误", str(exc), parent=self)
             return
         self.app.on_login(session)
 
-    def _register(self) -> None:
+    def _do_register(self) -> None:
         role = {
             UserRole.CUSTOMER.label: UserRole.CUSTOMER,
             UserRole.MERCHANT.label: UserRole.MERCHANT,

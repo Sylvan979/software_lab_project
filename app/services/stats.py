@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 
-from app.domain.enums import OrderStatus, RefundStatus, UserRole
+from app.domain.enums import OrderStatus, RefundStatus
 from app.repository.repositories import Repositories
 from app.services.base import BaseService
 
@@ -65,7 +65,12 @@ class StatsService(BaseService):
         refunded = [
             r
             for r in refunds
-            if r.status in (RefundStatus.APPROVED, RefundStatus.AUTO_APPROVED, RefundStatus.ARBITRATED)
+            if r.status
+            in (
+                RefundStatus.APPROVED,
+                RefundStatus.AUTO_APPROVED,
+                RefundStatus.ARBITRATED,
+            )
         ]
         merchant = self.get_user(merchant_id)
         return MerchantStats(

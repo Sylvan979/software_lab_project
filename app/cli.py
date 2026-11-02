@@ -7,14 +7,12 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 
 from app.config import DEFAULT_SETTINGS
 from app.container import AppContext, build_context
 from app.domain.enums import OrderStatus
 from app.domain.models import User
 from app.seed import DEMO_CODE, seed_demo_data
-from app.services.privacy import is_valid_phone
 
 
 def ensure_demo_data(ctx: AppContext) -> dict[str, str]:

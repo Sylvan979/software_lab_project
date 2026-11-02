@@ -5,18 +5,10 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from app.domain.enums import (
-    AccountStatus,
-    DeliveryStatus,
-    ResponsibleParty,
-    StoreStatus,
-    UserRole,
-)
+from app.domain.enums import AccountStatus, ResponsibleParty, StoreStatus, UserRole
 from app.ui.base import BaseView, ModalDialog
 from app.ui.dialogs import TextDialog
-from app.ui.theme import FAINT, GREEN, MUTED, RED
 from app.ui.widgets import (
-    add_field,
     add_row,
     clear_tree,
     fmt_time,
@@ -31,6 +23,7 @@ from app.ui.widgets import (
 class AdminView(BaseView):
     def __init__(self, master, app, user_id: str) -> None:
         super().__init__(master, app, user_id)
+        self._dispatch_riders: dict[str, str] = {}
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True)
         self._build_dashboard_tab()
@@ -403,13 +396,13 @@ class AdminView(BaseView):
             self.rider_combo.set(choices[0])
         else:
             self.rider_combo.set("")
-        self._dispatch_riders = {choice: rider.user_id for choice, rider in zip(choices, riders)}
+        self._dispatch_riders = dict(zip(choices, (r.user_id for r in riders), strict=False))
 
     def _redispatch(self) -> None:
         order_id = self._selected(self.failed_tree, "配送失败订单")
         if not order_id:
             return
-        rider_id = getattr(self, "_dispatch_riders", {}).get(self.rider_combo.get())
+        rider_id = self._dispatch_riders.get(self.rider_combo.get())
         if not rider_id:
             messagebox.showinfo("提示", "当前没有可指派的在线骑手", parent=self)
             return

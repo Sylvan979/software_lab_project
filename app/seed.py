@@ -10,6 +10,7 @@ from decimal import Decimal
 
 from app.container import AppContext
 from app.domain.enums import UserRole
+from app.domain.models import Admin
 from app.services.privacy import is_valid_phone
 
 DEMO_CODE = "123456"
@@ -36,8 +37,6 @@ def seed_demo_data(ctx: AppContext) -> dict[str, str]:
     auth, users, stores = ctx.auth, ctx.users, ctx.stores
 
     # 管理员账号由系统预置，不开放自助注册（REQ-001）
-    from app.domain.models import Admin
-
     admin = Admin(user_id=ctx.db.next_id("USR"), phone="13600000001", nickname="平台管理员")
     ctx.repos.users.add(admin)
 

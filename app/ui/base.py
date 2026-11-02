@@ -27,7 +27,7 @@ class BaseView(ttk.Frame):
             messagebox.showerror("操作失败", str(exc), parent=self)
             logger.info("业务操作被拒绝：%s", exc)
             return None
-        except Exception as exc:  # noqa: BLE001 - 界面层兜底
+        except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.exception("界面操作异常")
             messagebox.showerror("系统错误", f"{type(exc).__name__}: {exc}", parent=self)
             return None
@@ -43,7 +43,7 @@ class BaseView(ttk.Frame):
     def safe_refresh(self) -> None:
         try:
             self.refresh()
-        except Exception:  # noqa: BLE001 - 刷新失败不应打断用户操作
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.exception("界面刷新失败")
 
     def auto_refresh(self) -> None:

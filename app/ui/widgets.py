@@ -6,6 +6,8 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
+from app.ui.theme import GREEN, MUTED, RED
+
 
 def make_table(
     parent: tk.Misc,
@@ -114,8 +116,6 @@ def fmt_time(value: datetime | None) -> str:
 
 def tagged(tree: ttk.Treeview) -> ttk.Treeview:
     """为状态行配置颜色标签。"""
-    from app.ui.theme import GREEN, MUTED, RED
-
     tree.tag_configure("done", foreground=GREEN)
     tree.tag_configure("refund", foreground=RED)
     tree.tag_configure("muted", foreground=MUTED)
