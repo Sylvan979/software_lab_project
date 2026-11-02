@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -61,10 +62,21 @@ class JsonDatabase:
                     json.dumps(payload, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
-                os.replace(temp_path, self.path)
+                self._replace_with_retry(temp_path)
             except OSError as exc:
                 raise StorageError(f"数据写入失败：{exc}") from exc
             self._dirty = False
+
+    def _replace_with_retry(self, temp_path, attempts: int = 4) -> None:
+        """Windows 上杀毒/索引服务可能短暂占用目标文件，重试原子替换。"""
+        for attempt in range(attempts):
+            try:
+                os.replace(temp_path, self.path)
+                return
+            except PermissionError:
+                if attempt == attempts - 1:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
 
     def mark_dirty(self) -> None:
         with self._lock:
