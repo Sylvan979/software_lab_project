@@ -10,6 +10,7 @@ from app.services.orders import REJECT_REASONS
 from app.services.privacy import mask_detail, mask_phone
 from app.ui.base import BaseView, ModalDialog
 from app.ui.dialogs import ChoiceDialog
+from app.ui.panels import MessagePanel
 from app.ui.theme import FAINT, GREEN, RED
 from app.ui.widgets import (
     add_field,
@@ -152,9 +153,10 @@ class MerchantView(BaseView):
         if store.status is StoreStatus.SUSPENDED:
             color = RED
         self.store_status_label.configure(text=f"● {store.status.label}", foreground=color)
+        locked = store.status in (StoreStatus.PENDING, StoreStatus.SUSPENDED)
         self.business_button.configure(
             text="休息一下" if store.is_open else "开始营业",
-            state="disabled" if store.status in (StoreStatus.PENDING, StoreStatus.SUSPENDED) else "normal",
+            state="disabled" if locked else "normal",
         )
         stats = self.ctx.stats.merchant_stats(self.user_id, day=self.ctx.stats.today())
         self.stats_label.configure(
@@ -515,40 +517,8 @@ class MerchantView(BaseView):
     # 消息
     # ================================================================== #
     def _build_message_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(tab, text="消息")
-        toolbar = ttk.Frame(tab)
-        toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="刷新", command=self.safe_refresh).pack(side="left")
-        ttk.Button(toolbar, text="全部标为已读", command=self._mark_all_read).pack(
-            side="left", padx=6
-        )
-        self.msg_frame, self.msg_tree = make_table(
-            tab,
-            [
-                ("time", "时间", 110),
-                ("title", "标题", 160),
-                ("body", "内容", 480),
-                ("read", "状态", 60),
-            ],
-            height=15,
-        )
-        self.msg_frame.pack(fill="both", expand=True)
-
-    def _refresh_messages(self) -> None:
-        clear_tree(self.msg_tree)
-        for note in self.ctx.notifications.list_for(self.user_id):
-            add_row(
-                self.msg_tree,
-                note.notification_id,
-                (fmt_time(note.created_at), note.title, note.body, "已读" if note.read else "未读"),
-                tag=None if note.read else "done",
-            )
-
-    def _mark_all_read(self) -> None:
-        self.ctx.notifications.mark_all_read(self.user_id)
-        self.safe_refresh()
-        self.app.refresh_badge()
+        self.message_panel = MessagePanel(self.notebook, self.ctx, self.user_id, self.app)
+        self.notebook.add(self.message_panel, text="消息")
 
     # ================================================================== #
     def refresh(self) -> None:
@@ -556,7 +526,7 @@ class MerchantView(BaseView):
         self._refresh_dishes()
         self._refresh_orders()
         self._refresh_refunds()
-        self._refresh_messages()
+        self.message_panel.refresh()
 
 
 class EditDishDialog(ModalDialog):
@@ -587,7 +557,7 @@ class EditDishDialog(ModalDialog):
                 stock=int(self.stock.get()),
                 description=self.desc.get(),
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             messagebox.showerror("保存失败", str(exc), parent=self)
             return
         self.result = True

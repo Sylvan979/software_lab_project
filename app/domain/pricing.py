@@ -32,11 +32,11 @@ class AmountBreakdown:
         return ""
 
 
-def delivery_fee_for(distance_km: float, settings: Settings) -> Decimal:
+def delivery_fee_for(distance: float, settings: Settings) -> Decimal:
     """配送费 = 起步价 + 距离 × 单价（REQ-026 待确认的暂定规则）。"""
-    if distance_km < 0:
+    if distance < 0:
         raise ValueError("配送距离不能为负")
-    distance = Decimal(str(round(max(distance_km, 0.0), 2)))
+    distance = Decimal(str(round(max(distance, 0.0), 2)))
     return to_money(settings.delivery_base_fee + distance * settings.delivery_per_km_fee)
 
 

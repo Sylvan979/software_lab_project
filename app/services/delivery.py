@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app.domain.enums import DeliveryStatus, OrderStatus, UserRole
 from app.domain.models import DeliveryTask, Order, Rider
 from app.domain.pricing import distance_km
-from app.exceptions import ConflictError, NotFoundError, PermissionDeniedError, ValidationError
+from app.exceptions import ConflictError, PermissionDeniedError, ValidationError
 from app.repository.repositories import Repositories
 from app.services.audit import AuditService
 from app.services.base import BaseService

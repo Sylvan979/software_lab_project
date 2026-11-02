@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.domain.enums import PaymentStatus
 from app.domain.models import Order, PaymentRecord
-from app.exceptions import ConflictError, PaymentError
+from app.exceptions import PaymentError
 from app.repository.repositories import Repositories
 from app.services.audit import AuditService
 from app.services.base import BaseService

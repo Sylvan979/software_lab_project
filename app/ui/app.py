@@ -10,7 +10,11 @@ from app.container import AppContext, build_context
 from app.domain.enums import UserRole
 from app.jobs.scheduler import Scheduler
 from app.seed import seed_if_empty
+from app.ui.admin import AdminView
+from app.ui.customer import CustomerView
 from app.ui.login import LoginView
+from app.ui.merchant import MerchantView
+from app.ui.rider import RiderView
 from app.ui.theme import apply_theme
 
 logger = logging.getLogger(__name__)
@@ -110,19 +114,11 @@ class MainApp(tk.Tk):
     def _build_role_view(self):
         uid = self.user.user_id
         if self.user.role is UserRole.CUSTOMER:
-            from app.ui.customer import CustomerView
-
             return CustomerView(self.container, self, uid)
         if self.user.role is UserRole.MERCHANT:
-            from app.ui.merchant import MerchantView
-
             return MerchantView(self.container, self, uid)
         if self.user.role is UserRole.RIDER:
-            from app.ui.rider import RiderView
-
             return RiderView(self.container, self, uid)
-        from app.ui.admin import AdminView
-
         return AdminView(self.container, self, uid)
 
     def _clear_container(self) -> None:
@@ -156,7 +152,7 @@ class MainApp(tk.Tk):
                 self.current_view.auto_refresh()
                 self.refresh_badge()
             self.clock_var.set(self.ctx.stats.today().strftime("%Y-%m-%d"))
-        except Exception:  # noqa: BLE001 - 定时器不能抛出
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.exception("定时刷新失败")
         finally:
             self.after(2000, self._tick)

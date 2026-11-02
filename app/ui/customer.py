@@ -7,7 +7,9 @@ from datetime import datetime
 from tkinter import messagebox, simpledialog, ttk
 
 from app.domain.enums import OrderStatus
+from app.domain.pricing import distance_km
 from app.ui.base import BaseView, ModalDialog
+from app.ui.panels import MessagePanel
 from app.ui.theme import RED
 from app.ui.widgets import (
     add_field,
@@ -166,8 +168,6 @@ class CustomerView(BaseView):
         address = self.ctx.users.default_address(self.user_id)
         if address is None:
             return "未设置地址"
-        from app.domain.pricing import distance_km
-
         value = distance_km(store.x_km, store.y_km, address.x_km, address.y_km)
         return f"距默认地址 {value:.2f} km"
 
@@ -281,7 +281,10 @@ class CustomerView(BaseView):
         self._refresh_address_combo()
         if summary.store is not None:
             self.cart_summary_label.configure(
-                text=f"{summary.store.name} · {summary.total_quantity} 件 · 商品 ¥{summary.goods_amount:.2f}"
+                text=(
+                    f"{summary.store.name} · {summary.total_quantity} 件 · "
+                    f"商品 ¥{summary.goods_amount:.2f}"
+                )
             )
         else:
             self.cart_summary_label.configure(text="购物车为空")
@@ -435,7 +438,8 @@ class CustomerView(BaseView):
         ]
         for item in order.items:
             lines.append(
-                f"  {item.dish_name}　¥{item.unit_price:.2f} × {item.quantity} = ¥{item.subtotal:.2f}"
+                f"  {item.dish_name}　¥{item.unit_price:.2f} × "
+                f"{item.quantity} = ¥{item.subtotal:.2f}"
             )
         lines += [
             "",
@@ -646,40 +650,8 @@ class CustomerView(BaseView):
     # 消息
     # ================================================================== #
     def _build_message_tab(self) -> None:
-        tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="消息")
-        toolbar = ttk.Frame(tab)
-        toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="刷新", command=self._refresh_messages).pack(side="left")
-        ttk.Button(toolbar, text="全部标为已读", command=self._mark_all_read).pack(
-            side="left", padx=6
-        )
-        self.msg_frame, self.msg_tree = make_table(
-            tab,
-            [
-                ("time", "时间", 110),
-                ("title", "标题", 160),
-                ("body", "内容", 460),
-                ("read", "状态", 60),
-            ],
-            height=16,
-        )
-        self.msg_frame.pack(fill="both", expand=True)
-
-    def _refresh_messages(self) -> None:
-        clear_tree(self.msg_tree)
-        for note in self.ctx.notifications.list_for(self.user_id):
-            add_row(
-                self.msg_tree,
-                note.notification_id,
-                (fmt_time(note.created_at), note.title, note.body, "已读" if note.read else "未读"),
-                tag=None if note.read else "done",
-            )
-
-    def _mark_all_read(self) -> None:
-        count = self.ctx.notifications.mark_all_read(self.user_id)
-        self.app.set_status(f"已标记 {count} 条消息为已读")
-        self.safe_refresh()
+        self.message_panel = MessagePanel(self.notebook, self.ctx, self.user_id, self.app)
+        self.notebook.add(self.message_panel, text="消息")
 
     # ================================================================== #
     def refresh(self) -> None:
@@ -687,7 +659,7 @@ class CustomerView(BaseView):
         self._refresh_cart()
         self._refresh_orders()
         self._refresh_addresses()
-        self._refresh_messages()
+        self.message_panel.refresh()
 
 
 class ReviewDialog(ModalDialog):

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from app.domain.enums import AccountStatus, UserRole
-from app.domain.models import Address, Customer, User
-from app.exceptions import ConflictError, NotFoundError, PermissionDeniedError, ValidationError
+from app.domain.models import Address, User
+from app.exceptions import PermissionDeniedError, ValidationError
 from app.repository.repositories import Repositories
 from app.services.audit import AuditService
 from app.services.base import BaseService

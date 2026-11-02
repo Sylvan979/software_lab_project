@@ -21,7 +21,11 @@ class CartLine:
 
     @property
     def available(self) -> bool:
-        return self.dish is not None and self.dish.is_available and self.dish.stock >= self.item.quantity
+        return (
+            self.dish is not None
+            and self.dish.is_available
+            and self.dish.stock >= self.item.quantity
+        )
 
 
 @dataclass(frozen=True)

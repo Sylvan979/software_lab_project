@@ -99,6 +99,6 @@ class Scheduler:
                     admin.user_id, f"{name}失败", str(exc)
                 )
             return 0
-        except Exception:  # noqa: BLE001 - 定时任务必须继续运行
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.exception("%s出现未预期异常", name)
             return 0

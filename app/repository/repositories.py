@@ -9,12 +9,7 @@ from __future__ import annotations
 from dataclasses import fields as dataclass_fields
 from typing import Any, Generic, TypeVar
 
-from app.domain.enums import (
-    DeliveryStatus,
-    DishStatus,
-    OrderStatus,
-    StoreStatus,
-)
+from app.domain.enums import DeliveryStatus, OrderStatus, StoreStatus
 from app.domain.models import (
     Address,
     Admin,

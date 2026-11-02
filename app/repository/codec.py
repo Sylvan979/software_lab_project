@@ -86,7 +86,7 @@ def decode(value: Any, hint: Any = Any) -> Any:
             return marker
 
     if get_origin(hint) is typing.Union or isinstance(hint, types.UnionType):
-        args = [arg for arg in get_args(hint) if arg is not type(None)]
+        args = [arg for arg in get_args(hint) if arg is not types.NoneType]
         hint = args[0] if args else Any
 
     if is_dataclass(hint) and isinstance(value, dict):
