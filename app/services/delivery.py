@@ -20,6 +20,14 @@ from app.services.privacy import mask_detail, mask_phone
 
 EXCEPTION_REASONS = ("联系不上顾客", "地址错误", "交通事故", "车辆故障", "其他")
 
+ACTIVE_DELIVERY_ORDER_STATUSES = frozenset(
+    {
+        OrderStatus.PENDING_DELIVERY,
+        OrderStatus.DELIVERING,
+        OrderStatus.DELIVERY_FAILED,
+    }
+)
+
 
 class DeliveryService(BaseService):
     def __init__(
@@ -94,7 +102,14 @@ class DeliveryService(BaseService):
     def my_tasks(self, rider_id: str) -> list[DeliveryTask]:
         self.require_rider(rider_id)
         active = {DeliveryStatus.GRABBED, DeliveryStatus.PICKED}
-        tasks = [t for t in self.repos.deliveries.by_rider(rider_id) if t.status in active]
+        tasks = []
+        for task in self.repos.deliveries.by_rider(rider_id):
+            if task.status not in active:
+                continue
+            order = self.repos.orders.find(task.order_id)
+            if order is None or order.status not in ACTIVE_DELIVERY_ORDER_STATUSES:
+                continue
+            tasks.append(task)
         return sorted(tasks, key=lambda t: t.created_at)
 
     def task_detail(self, task_id: str) -> tuple[DeliveryTask, Order]:
@@ -249,6 +264,31 @@ class DeliveryService(BaseService):
                 "配送失败待处理",
                 f"订单 {order.order_id}：{reason}",
             )
+            return task
+
+    def cancel_for_order(
+        self, order: Order, *, reason: str = "订单已退款"
+    ) -> DeliveryTask | None:
+        """订单退款后关闭当前配送单，避免任务残留在骑手列表。"""
+        with self._lock:
+            task = self.repos.deliveries.find(order.delivery_task_id)
+            if task is None:
+                return None
+            terminal = (
+                DeliveryStatus.DELIVERED,
+                DeliveryStatus.FAILED,
+                DeliveryStatus.CANCELLED,
+            )
+            if task.status in terminal:
+                return task
+            task.status = DeliveryStatus.CANCELLED
+            task.exception_reason = reason
+            self.repos.deliveries.update(task)
+            if task.rider_id:
+                rider = self.repos.users.find(task.rider_id)
+                if rider is not None and task.task_id in rider.active_task_ids:
+                    rider.active_task_ids.remove(task.task_id)
+                    self.repos.users.update(rider)
             return task
 
     def redispatch(

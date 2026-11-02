@@ -14,6 +14,7 @@ from app.exceptions import ConflictError, PermissionDeniedError, ValidationError
 from app.repository.repositories import Repositories
 from app.services.audit import AuditService
 from app.services.base import BaseService
+from app.services.delivery import DeliveryService
 from app.services.notifications import NotificationService
 from app.services.order_lifecycle import OrderLifecycle
 from app.services.payments import PaymentService
@@ -38,12 +39,14 @@ class RefundService(BaseService):
         notifications: NotificationService,
         lifecycle: OrderLifecycle,
         payments: PaymentService,
+        delivery: DeliveryService,
     ) -> None:
         super().__init__(repos, settings)
         self.audit = audit
         self.notifications = notifications
         self.lifecycle = lifecycle
         self.payments = payments
+        self.delivery = delivery
 
     # ------------------------------------------------------------------ #
     # 顾客申请
@@ -268,6 +271,7 @@ class RefundService(BaseService):
             now=now,
         )
         self.lifecycle.release_stock(order)
+        self.delivery.cancel_for_order(order)
         order.status_before_refund = None
         order.refund_id = refund.refund_id
         self.repos.orders.update(order)
