@@ -172,6 +172,14 @@ class RefundAndDeliveryTest(ServiceTestCase):
         self.assertIs(done.status, RefundStatus.APPROVED)
         self.assertIs(self.ctx.repos.orders.get(order.order_id).status, OrderStatus.REFUNDED)
         self.assertIs(self.ctx.payments.payment_of(order.order_id).status, PaymentStatus.REFUNDED)
+        task = self.ctx.repos.deliveries.find(
+            self.ctx.repos.orders.get(order.order_id).delivery_task_id
+        )
+        self.assertIsNotNone(task)
+        self.assertIs(task.status, DeliveryStatus.CANCELLED)
+        rider = self.ctx.repos.users.get(self.ids["rider"])
+        self.assertNotIn(task.task_id, rider.active_task_ids)
+        self.assertEqual(self.ctx.delivery.my_tasks(self.ids["rider"]), [])
 
     def test_refund_reject_restores_previous_status(self) -> None:
         order = self.place()

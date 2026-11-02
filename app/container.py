@@ -67,7 +67,9 @@ def build_context(settings: Settings | None = None) -> AppContext:
         cart,
         delivery,
     )
-    refunds = RefundService(repos, settings, audit, notifications, lifecycle, payments)
+    refunds = RefundService(
+        repos, settings, audit, notifications, lifecycle, payments, delivery
+    )
     stats = StatsService(repos, settings)
 
     return AppContext(

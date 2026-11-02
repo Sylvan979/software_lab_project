@@ -79,6 +79,7 @@ class DeliveryStatus(LabeledEnum):
     DELIVERED = "delivered"
     FAILED = "failed"
     MANUAL = "manual"
+    CANCELLED = "cancelled"
 
 
 class RefundStatus(LabeledEnum):
@@ -137,6 +138,7 @@ _LABELS: dict[Enum, str] = {
     DeliveryStatus.DELIVERED: "已送达",
     DeliveryStatus.FAILED: "配送失败",
     DeliveryStatus.MANUAL: "待人工调度",
+    DeliveryStatus.CANCELLED: "已取消",
     RefundStatus.PENDING: "待处理",
     RefundStatus.APPROVED: "已同意",
     RefundStatus.AUTO_APPROVED: "超时自动同意",
