@@ -268,8 +268,10 @@ OK
 | `fix/refund-delivery-consistency` | 退款后关闭配送单 |
 | `fix/storage-retry` | Windows 原子替换重试 |
 | `chore/report-artifacts` | 报告截图与验证记录 |
+| `docs/lab3-report` | 报告源文件与 PDF |
+| `chore/package-script` | 提交包打包脚本与 README 同步 |
 
-当前 `main` 共 23 次提交、11 个已合并特性分支。主干历史如下（节选）：
+当前 `main` 共 27 次提交、13 个已合并特性分支。主干历史如下（节选）：
 
 ```text
 *   [AI 生成] 合入报告截图与验证记录
