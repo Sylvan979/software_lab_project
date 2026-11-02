@@ -1,0 +1,11 @@
+# 运行时数据（模拟数据库与日志），不入库
+data/
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+# 提交包（由 打包.ps1 生成）
+实验3_*.zip
+实验3_241220075_赵力丹/
