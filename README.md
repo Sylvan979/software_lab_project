@@ -12,8 +12,12 @@
 ```powershell
 python run.py            # 启动图形界面
 python -m app.cli seed   # 生成演示数据（首次运行自动执行）
+python -m app.cli demo   # 命令行跑通完整业务流程
 python -m unittest discover -s tests -v
+python -m pylint app     # 代码规范检查
 ```
+
+开发环境：Python 3.14.7；运行仅需标准库，pylint 只用于开发期检查。
 
 演示账号（验证码统一为 `123456`）：
 
@@ -50,3 +54,31 @@ run.py                 程序入口
 - 订单状态只能经 `OrderStateMachine` 迁移，非法迁移抛出 `InvalidTransitionError`。
 - 金额一律使用 `Decimal`，对外保留两位小数。
 - 所有关键操作写入审计日志（REQ-014），日志只追加。
+
+## 工程化记录
+
+| 分支 | 内容 |
+| --- | --- |
+| `feat/domain` | 领域模型、枚举、状态机、计价 |
+| `feat/persistence` | JSON 数据库、通用仓储、编解码 |
+| `feat/services` | 业务服务、异常体系、依赖装配、演示数据、命令行 |
+| `feat/scheduler` | 超时兜底定时任务与测试 |
+| `feat/ui` | 登录与四端 Tkinter 界面 |
+| `chore/code-quality` | pylint 清理、共用消息面板 |
+| `docs/engineering` | 设计映射、AI 使用记录、测试记录 |
+
+每个分支完成后通过 `git merge --no-ff` 合入 `main`；生成提交使用 `[AI 生成]`，人工修正使用 `[人工修改]`。
+
+远程仓库（需在具备权限的环境中执行，仓库中不保存任何令牌）：
+
+```powershell
+git remote add origin https://github.com/<用户名>/<仓库名>.git
+git push -u origin main
+git push origin --all
+```
+
+## 文档
+
+- [设计映射](docs/design-mapping.md)：UML 元素到代码、状态机、持久化与规模统计
+- [AI 使用记录](docs/ai-usage.md)：协作流程、生成内容、异常输出处理
+- [测试记录](docs/testing.md)：编译、测试、pylint、命令行与界面验收
