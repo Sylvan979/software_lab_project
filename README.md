@@ -59,15 +59,27 @@ run.py                 程序入口
 
 | 分支 | 内容 |
 | --- | --- |
-| `feat/domain` | 领域模型、枚举、状态机、计价 |
+| `feat/domain-model` | 领域模型、枚举、状态机、计价 |
 | `feat/persistence` | JSON 数据库、通用仓储、编解码 |
 | `feat/services` | 业务服务、异常体系、依赖装配、演示数据、命令行 |
-| `feat/scheduler` | 超时兜底定时任务与测试 |
+| `feat/jobs` | 超时兜底定时任务与测试 |
 | `feat/ui` | 登录与四端 Tkinter 界面 |
 | `chore/code-quality` | pylint 清理、共用消息面板 |
+| `fix/demo-repeatability` | 演示脚本可重复执行 |
 | `docs/engineering` | 设计映射、AI 使用记录、测试记录 |
+| `fix/refund-delivery-consistency` | 退款后关闭配送单 |
+| `fix/storage-retry` | Windows 原子替换重试 |
+| `chore/report-artifacts` | 报告截图与验证记录 |
+| `docs/lab3-report` | 实验报告源文件与 PDF |
 
 每个分支完成后通过 `git merge --no-ff` 合入 `main`；生成提交使用 `[AI 生成]`，人工修正使用 `[人工修改]`。
+
+报告与提交包：
+
+```powershell
+powershell -File report\render-report.ps1    # 由 report.md 渲染 PDF
+powershell -File tools\package_submission.ps1 # 生成实验3_241220075_赵力丹.zip
+```
 
 远程仓库（需在具备权限的环境中执行，仓库中不保存任何令牌）：
 
