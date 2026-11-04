@@ -94,3 +94,4 @@ git push origin --all
 - [设计映射](docs/design-mapping.md)：UML 元素到代码、状态机、持久化与规模统计
 - [AI 使用记录](docs/ai-usage.md)：协作流程、生成内容、异常输出处理
 - [测试记录](docs/testing.md)：编译、测试、pylint、命令行与界面验收
+- [界面按钮测试记录](docs/ui-test-record.md)：逐按钮用例、执行结果与缺陷修复
