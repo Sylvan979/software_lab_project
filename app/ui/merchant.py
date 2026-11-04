@@ -19,6 +19,8 @@ from app.ui.widgets import (
     fmt_time,
     make_detail,
     make_table,
+    parse_float,
+    parse_int,
     selected_id,
     set_detail,
     status_tag,
@@ -99,14 +101,19 @@ class MerchantView(BaseView):
         )
 
     def _apply_store(self) -> None:
+        x_km = parse_float(self.reg_x.get())
+        y_km = parse_float(self.reg_y.get())
+        if x_km is None or y_km is None:
+            messagebox.showinfo("提示", "坐标必须是数字（单位：公里）", parent=self)
+            return
         store = self.guard(
             lambda: self.ctx.stores.apply_store(
                 self.user_id,
                 name=self.reg_name.get(),
                 description=self.reg_desc.get(),
                 address_text=self.reg_address.get(),
-                x_km=float(self.reg_x.get() or 0),
-                y_km=float(self.reg_y.get() or 0),
+                x_km=x_km,
+                y_km=y_km,
                 min_order_amount=self.reg_min.get(),
             ),
             "入驻申请已提交，等待平台审核",
@@ -117,6 +124,7 @@ class MerchantView(BaseView):
 
     def _toggle_business(self) -> None:
         if self.store is None:
+            messagebox.showinfo("提示", "请先提交入驻申请", parent=self)
             return
         target = not self.store.is_open
         self.guard(
@@ -125,12 +133,16 @@ class MerchantView(BaseView):
         )
 
     def _save_store(self) -> None:
+        timeout = parse_int(self.accept_timeout_var.get(), default=10)
+        if timeout is None:
+            messagebox.showinfo("提示", "接单时限必须是整数（分钟）", parent=self)
+            return
         self.guard(
             lambda: self.ctx.stores.update_store(
                 self.user_id,
                 notice=self.notice_var.get(),
                 min_order_amount=self.min_order_var.get(),
-                accept_timeout_minutes=int(self.accept_timeout_var.get() or 10),
+                accept_timeout_minutes=timeout,
             ),
             "店铺设置已保存",
         )
@@ -291,13 +303,17 @@ class MerchantView(BaseView):
         if not category_id:
             messagebox.showinfo("提示", "请先选择或新增分类", parent=self)
             return
+        stock = parse_int(self.dish_stock.get())
+        if stock is None or stock < 0:
+            messagebox.showinfo("提示", "库存必须是非负整数", parent=self)
+            return
         self.guard(
             lambda: self.ctx.stores.add_dish(
                 self.user_id,
                 category_id=category_id,
                 name=self.dish_name.get(),
                 price=self.dish_price.get(),
-                stock=int(self.dish_stock.get() or 0),
+                stock=stock,
                 description=self.dish_desc.get(),
             ),
             "菜品已添加",
@@ -306,6 +322,7 @@ class MerchantView(BaseView):
     def _edit_dish(self) -> None:
         dish_id = selected_id(self.dish_tree)
         if not dish_id:
+            messagebox.showinfo("提示", "请先选择菜品", parent=self)
             return
         dialog = EditDishDialog(self, self.ctx, self.user_id, dish_id)
         if dialog.show():
@@ -314,6 +331,7 @@ class MerchantView(BaseView):
     def _set_dish_status(self, status: DishStatus) -> None:
         dish_id = selected_id(self.dish_tree)
         if not dish_id:
+            messagebox.showinfo("提示", "请先选择菜品", parent=self)
             return
         self.guard(
             lambda: self.ctx.stores.set_dish_status(self.user_id, dish_id, status),
@@ -548,13 +566,17 @@ class EditDishDialog(ModalDialog):
         ).grid(row=3, column=0, sticky="w", pady=(12, 0))
 
     def _save(self) -> None:
+        stock = parse_int(self.stock.get())
+        if stock is None or stock < 0:
+            messagebox.showinfo("提示", "库存必须是非负整数", parent=self)
+            return
         try:
             self.ctx.stores.update_dish(
                 self.merchant_id,
                 self.dish.dish_id,
                 name=self.name.get(),
                 price=self.price.get(),
-                stock=int(self.stock.get()),
+                stock=stock,
                 description=self.desc.get(),
             )
         except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught

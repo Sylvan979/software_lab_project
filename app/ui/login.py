@@ -153,5 +153,8 @@ class LoginView(ttk.Frame):
         except DomainError as exc:
             messagebox.showerror("注册失败", str(exc), parent=self)
             return
+        except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+            messagebox.showerror("系统错误", f"{type(exc).__name__}: {exc}", parent=self)
+            return
         messagebox.showinfo("注册成功", f"已创建{role.label}账号并登录", parent=self)
         self.app.on_login(session)

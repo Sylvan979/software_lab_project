@@ -214,10 +214,15 @@ class DeliveryRepository(Repository[DeliveryTask]):
     entity_type = DeliveryTask
 
     def by_order(self, order_id: str) -> DeliveryTask | None:
-        for task in self.all():
-            if task.order_id == order_id:
-                return task
-        return None
+        """返回该订单最新一轮的配送单。
+
+        配送失败重派后同一订单会存在多条配送单，旧实现返回第一条，
+        调用方会拿到已经失败的旧任务；这里按派单轮次取最新一条。
+        """
+        tasks = [task for task in self.all() if task.order_id == order_id]
+        if not tasks:
+            return None
+        return max(tasks, key=lambda task: task.dispatch_round)
 
     def available(self) -> list[DeliveryTask]:
         return [t for t in self.all() if t.status is DeliveryStatus.PENDING]

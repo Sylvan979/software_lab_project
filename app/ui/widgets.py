@@ -106,6 +106,28 @@ def add_field(
     return entry
 
 
+def parse_float(text: str, default: float = 0.0) -> float | None:
+    """把输入框文本转为浮点数；空串取默认值，非法输入返回 None。"""
+    raw = text.strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def parse_int(text: str, default: int = 0) -> int | None:
+    """把输入框文本转为整数；空串取默认值，非法输入返回 None。"""
+    raw = text.strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 def money(value) -> str:
     return f"¥{value:.2f}"
 

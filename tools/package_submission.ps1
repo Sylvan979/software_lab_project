@@ -30,7 +30,7 @@ foreach ($dir in 'app', 'tests', 'tools') {
 Copy-Item (Join-Path $root 'run.py') (Join-Path $dest 'code')
 Copy-Item (Join-Path $root 'README.md') (Join-Path $dest 'code')
 Copy-Item (Join-Path $root '.pylintrc') (Join-Path $dest 'code')
-foreach ($doc in 'design-mapping.md', 'ai-usage.md', 'testing.md') {
+foreach ($doc in 'design-mapping.md', 'ai-usage.md', 'testing.md', 'ui-test-record.md') {
   Copy-Item (Join-Path $root "docs\$doc") (Join-Path $dest 'code\docs')
 }
 
