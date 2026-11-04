@@ -39,7 +39,7 @@ class MainApp(tk.Tk):
 
         self._build_shell()
         self.show_login()
-        self.after(1500, self._tick)
+        self._tick_job = self.after(1500, self._tick)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     # ------------------------------------------------------------------ #
@@ -155,13 +155,23 @@ class MainApp(tk.Tk):
         except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.exception("定时刷新失败")
         finally:
-            self.after(2000, self._tick)
+            self._tick_job = self.after(2000, self._tick)
 
     def _on_close(self) -> None:
         try:
             self.ctx.db.save()
         finally:
             self.destroy()
+
+    def destroy(self) -> None:
+        job = getattr(self, "_tick_job", None)
+        if job is not None:
+            try:
+                self.after_cancel(job)
+            except tk.TclError:
+                pass
+            self._tick_job = None
+        super().destroy()
 
 
 def run() -> int:

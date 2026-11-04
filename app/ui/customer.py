@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import tkinter as tk
-from datetime import datetime
 from tkinter import messagebox, simpledialog, ttk
+from uuid import uuid4
 
 from app.domain.enums import OrderStatus
 from app.domain.pricing import distance_km
@@ -18,6 +18,8 @@ from app.ui.widgets import (
     fmt_time,
     make_detail,
     make_table,
+    parse_float,
+    parse_int,
     selected_id,
     set_detail,
     status_tag,
@@ -100,7 +102,7 @@ class CustomerView(BaseView):
         cart_bar = ttk.Frame(right)
         cart_bar.pack(fill="x", pady=(8, 0))
         ttk.Label(cart_bar, text="数量", style="Muted.TLabel").pack(side="left")
-        self.qty_var = tk.IntVar(value=1)
+        self.qty_var = tk.StringVar(value="1")
         ttk.Spinbox(
             cart_bar, from_=1, to=99, textvariable=self.qty_var, width=5
         ).pack(side="left", padx=(6, 12))
@@ -176,8 +178,12 @@ class CustomerView(BaseView):
         if not dish_id:
             messagebox.showinfo("提示", "请先选择菜品", parent=self)
             return
+        quantity = parse_int(self.qty_var.get(), default=1)
+        if quantity is None or quantity <= 0:
+            messagebox.showinfo("提示", "数量必须是正整数", parent=self)
+            return
         result = self.guard(
-            lambda: self.ctx.cart.add_item(self.user_id, dish_id, int(self.qty_var.get())),
+            lambda: self.ctx.cart.add_item(self.user_id, dish_id, quantity),
             success="已加入购物车",
         )
         if result:
@@ -218,7 +224,7 @@ class CustomerView(BaseView):
         controls = ttk.Frame(tab)
         controls.pack(fill="x", pady=(8, 0))
         ttk.Label(controls, text="数量", style="Muted.TLabel").pack(side="left")
-        self.cart_qty = tk.IntVar(value=1)
+        self.cart_qty = tk.StringVar(value="1")
         ttk.Spinbox(
             controls, from_=1, to=99, textvariable=self.cart_qty, width=5
         ).pack(side="left", padx=6)
@@ -313,18 +319,23 @@ class CustomerView(BaseView):
     def _update_cart_qty(self) -> None:
         dish_id = selected_id(self.cart_tree)
         if not dish_id:
+            messagebox.showinfo("提示", "请先选择购物车中的菜品", parent=self)
+            return
+        quantity = parse_int(self.cart_qty.get(), default=1)
+        if quantity is None or quantity <= 0:
+            messagebox.showinfo("提示", "数量必须是正整数", parent=self)
             return
         self.guard(
-            lambda: self.ctx.cart.update_quantity(
-                self.user_id, dish_id, int(self.cart_qty.get())
-            ),
+            lambda: self.ctx.cart.update_quantity(self.user_id, dish_id, quantity),
             success="数量已更新",
         )
 
     def _remove_cart_item(self) -> None:
         dish_id = selected_id(self.cart_tree)
-        if dish_id:
-            self.guard(lambda: self.ctx.cart.remove_item(self.user_id, dish_id), "已移除")
+        if not dish_id:
+            messagebox.showinfo("提示", "请先选择购物车中的菜品", parent=self)
+            return
+        self.guard(lambda: self.ctx.cart.remove_item(self.user_id, dish_id), "已移除")
 
     def _clear_cart(self) -> None:
         if messagebox.askyesno("清空购物车", "确定清空购物车吗？", parent=self):
@@ -337,7 +348,9 @@ class CustomerView(BaseView):
             messagebox.showinfo("提示", "请先添加并选择收货地址", parent=self)
             self.notebook.select(3)
             return
-        key = f"UI-{self.user_id}-{datetime.now().timestamp():.0f}"
+        # 每次点击都生成独立幂等键：双击不会重复下单，而先前的旧按钮事件
+        # 也不会把新购物车误判为“重复提交”而复用历史订单。
+        key = f"UI-{self.user_id}-{uuid4().hex}"
         result = self.guard(
             lambda: self.ctx.orders.checkout(
                 self.user_id,
@@ -602,6 +615,7 @@ class CustomerView(BaseView):
         ).grid(row=3, column=0, sticky="w", pady=(10, 0))
 
     def _refresh_addresses(self) -> None:
+        selected = selected_id(self.address_tree)
         clear_tree(self.address_tree)
         for address in self.ctx.users.list_addresses(self.user_id):
             add_row(
@@ -615,17 +629,24 @@ class CustomerView(BaseView):
                     "是" if address.is_default else "",
                 ),
             )
+        if selected and self.address_tree.exists(selected):
+            self.address_tree.selection_set(selected)
         self._refresh_address_combo()
 
     def _add_address(self) -> None:
+        x_km = parse_float(self.addr_x.get())
+        y_km = parse_float(self.addr_y.get())
+        if x_km is None or y_km is None:
+            messagebox.showinfo("提示", "坐标必须是数字（单位：公里）", parent=self)
+            return
         self.guard(
             lambda: self.ctx.users.add_address(
                 self.user_id,
                 receiver=self.addr_receiver.get(),
                 phone=self.addr_phone.get(),
                 detail=self.addr_detail.get(),
-                x_km=float(self.addr_x.get() or 0),
-                y_km=float(self.addr_y.get() or 0),
+                x_km=x_km,
+                y_km=y_km,
                 set_default=self.addr_default.get(),
             ),
             "地址已保存",
@@ -633,15 +654,20 @@ class CustomerView(BaseView):
 
     def _set_default_address(self) -> None:
         address_id = selected_id(self.address_tree)
-        if address_id:
-            self.guard(
-                lambda: self.ctx.users.set_default_address(self.user_id, address_id),
-                "默认地址已更新",
-            )
+        if not address_id:
+            messagebox.showinfo("提示", "请先选择收货地址", parent=self)
+            return
+        self.guard(
+            lambda: self.ctx.users.set_default_address(self.user_id, address_id),
+            "默认地址已更新",
+        )
 
     def _delete_address(self) -> None:
         address_id = selected_id(self.address_tree)
-        if address_id and messagebox.askyesno("删除地址", "确定删除该地址吗？", parent=self):
+        if not address_id:
+            messagebox.showinfo("提示", "请先选择收货地址", parent=self)
+            return
+        if messagebox.askyesno("删除地址", "确定删除该地址吗？", parent=self):
             self.guard(
                 lambda: self.ctx.users.delete_address(self.user_id, address_id), "地址已删除"
             )

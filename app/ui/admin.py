@@ -151,6 +151,8 @@ class AdminView(BaseView):
         frame2.pack(fill="both", expand=True)
 
     def _refresh_stores(self) -> None:
+        pending_selected = selected_id(self.pending_store_tree)
+        all_selected = selected_id(self.all_store_tree)
         clear_tree(self.pending_store_tree)
         for store in self.ctx.stores.pending_stores(self.user_id):
             merchant = self.ctx.repos.users.get(store.merchant_id)
@@ -180,6 +182,10 @@ class AdminView(BaseView):
                 ),
                 tag="muted" if store.status is StoreStatus.SUSPENDED else None,
             )
+        if pending_selected and self.pending_store_tree.exists(pending_selected):
+            self.pending_store_tree.selection_set(pending_selected)
+        if all_selected and self.all_store_tree.exists(all_selected):
+            self.all_store_tree.selection_set(all_selected)
 
     def _selected(self, tree, kind: str) -> str | None:
         item = selected_id(tree)
@@ -452,6 +458,7 @@ class AdminView(BaseView):
         frame.pack(fill="both", expand=True)
 
     def _refresh_users(self) -> None:
+        selected = selected_id(self.user_tree)
         role = None
         if self.role_filter.get() != "全部":
             role = next(r for r in UserRole if r.label == self.role_filter.get())
@@ -474,6 +481,8 @@ class AdminView(BaseView):
                 ),
                 tag="muted" if user.status is AccountStatus.FROZEN else None,
             )
+        if selected and self.user_tree.exists(selected):
+            self.user_tree.selection_set(selected)
 
     def _freeze(self) -> None:
         user_id = self._selected(self.user_tree, "用户")
