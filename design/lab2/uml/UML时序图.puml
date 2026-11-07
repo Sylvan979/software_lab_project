@@ -1,0 +1,80 @@
+@startuml
+skinparam dpi 150
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontSize 12
+skinparam roundCorner 6
+skinparam sequence {
+  ArrowColor #7A8291
+  LifeLineBorderColor #C9CFD8
+  ParticipantBorderColor #C9CFD8
+  ParticipantBackgroundColor #FDF5F0
+  ActorBorderColor #C9CFD8
+  ActorBackgroundColor #FFFFFF
+  GroupBorderColor #C9CFD8
+  GroupBackgroundColor #FAFBFC
+}
+skinparam noteBackgroundColor #FFF8EE
+skinparam noteBorderColor #F2C48C
+
+title 图7　时序图 —— 顾客下单支付与商家接单
+
+actor 顾客 as C
+participant "顾客端 App" as APP
+participant "API 网关" as GW
+participant "订单服务" as OS
+participant "商家服务\n(库存)" as MS
+participant "支付服务\n(模拟)" as PS
+participant "消息通知服务" as NS
+actor 商家 as M
+
+C -> APP : 点击「去结算」
+APP -> APP : 校验购物车、计算金额\n（商品 + 打包 + 配送 − 优惠）
+APP -> GW : POST /cart/checkout
+GW -> GW : 校验 Token 与角色
+GW -> OS : 创建预订单
+OS -> MS : 查询菜品库存与状态
+MS --> OS : 返回库存结果
+
+alt 存在售罄商品
+  OS --> GW : 409  售罄商品清单
+  GW --> APP : 返回错误与售罄列表
+  APP -> C : 提示并自动移除售罄商品
+else 库存充足
+  OS -> MS : 预占库存（Redis + 数据库）
+  OS --> GW : 预订单 + 应付金额
+  GW --> APP : 200 预订单
+  C -> APP : 确认支付
+  APP -> GW : POST /orders/pay
+  GW -> OS : 提交订单
+  OS -> PS : 发起支付（模拟渠道）
+  PS --> OS : 支付结果
+  alt 支付成功
+    OS -> OS : 订单状态 待支付 → 待接单
+    OS -> NS : 推送新订单
+    NS --> M : 新订单提醒（10 分钟倒计时）
+    OS --> GW : 200 订单号 + 预计送达时间
+    GW --> APP : 返回下单成功
+    APP -> C : 跳转「配送进度」页
+  else 支付失败
+    OS -> OS : 订单状态 → 已取消
+    OS -> MS : 释放预占库存
+    OS --> GW : 402 支付失败
+    GW --> APP : 返回失败原因
+    APP -> C : 提示重新支付
+  end
+end
+
+M -> GW : POST /merchant/orders/{id}/accept
+GW -> OS : 商家接单
+OS -> OS : 订单状态 待接单 → 制作中
+OS -> NS : 通知顾客与调度中心
+NS --> C : 「商家已接单」推送
+
+note over OS
+  每次状态变更都会写入订单状态流水，
+  供订单跟踪页与后台操作日志查询。
+end note
+
+@enduml
