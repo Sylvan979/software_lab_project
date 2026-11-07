@@ -1,0 +1,223 @@
+@startuml
+skinparam dpi 150
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontSize 12
+skinparam roundCorner 6
+skinparam classAttributeIconSize 0
+skinparam nodesep 34
+skinparam ranksep 60
+skinparam class {
+  BorderColor #C9CFD8
+  ArrowColor #7A8291
+  FontColor #15171C
+}
+skinparam noteBackgroundColor #FFF8EE
+skinparam noteBorderColor #F2C48C
+skinparam noteFontSize 11
+hide empty members
+
+title 图1　类图 —— 城市外卖点餐与配送平台核心领域模型
+
+abstract class 用户 #FDF5F0 {
+  # 用户ID : Long
+  # 手机号 : String
+  # 昵称 : String
+  # 角色 : 用户角色
+  # 账号状态 : 正常/冻结
+  + 登录(验证码) : Token
+  + 修改资料(资料) : bool
+}
+class 顾客 #FDF5F0 {
+  - 余额 : Decimal
+  - 默认地址 : 地址
+  + 下单(购物车, 地址) : 订单
+  + 申请退款(订单, 原因) : 退款单
+  + 评价(订单, 评分, 内容) : 评价
+}
+class 商家 #FDF5F0 {
+  - 店铺 : 店铺
+  - 接单率 : float
+  + 接单(订单) : bool
+  + 拒单(订单, 原因) : bool
+  + 标记出餐(订单) : void
+  + 更新库存(菜品, 数量) : void
+  + 上架下架(菜品) : void
+}
+class 配送员 #FDF5F0 {
+  - 工号 : String
+  - 在线状态 : bool
+  - 当前负载 : int
+  + 上线/下线() : void
+  + 抢单(配送单) : bool
+  + 确认取餐(配送单) : void
+  + 确认送达(配送单) : void
+  + 上报异常(配送单, 原因) : void
+}
+class 平台管理员 #FDF5F0 {
+  + 审核商家(入驻申请, 结论, 意见) : void
+  + 仲裁退款(退款单) : void
+  + 冻结账号(用户) : void
+}
+
+class 地址 #FDF5F0 {
+  + 收货人 : String
+  + 联系电话 : String
+  + 楼栋门牌 : String
+  + 是否默认 : bool
+  + 是否在配送范围() : bool
+}
+class 评价 #FFFFFF {
+  + 评分 : int
+  + 内容 : String
+  + 评价时间 : DateTime
+  + 商家回复 : String
+}
+
+class 店铺 #F3F7FD {
+  + 店铺ID : Long
+  + 名称 : String
+  + 位置 : String
+  + 营业状态 : 营业/休息
+  + 公告 : String
+  + 起送价 : Decimal
+  + 评分 : float
+  + 调整营业状态(状态) : void
+  + 更新公告(内容) : void
+}
+class 菜品分类 #F3F7FD {
+  + 分类名 : String
+  + 排序号 : int
+}
+class 菜品 #F3F7FD {
+  + 菜品ID : Long
+  + 名称 : String
+  + 单价 : Decimal
+  + 库存 : int
+  + 月售 : int
+  + 状态 : 在售/下架/售罄
+  + 扣减库存(数量) : bool
+  + 恢复库存(数量) : void
+}
+
+class 购物车 #FFFFFF {
+  + 计算总价() : Decimal
+  + 校验库存() : 售罄列表
+  + 转为订单项() : List
+}
+class 购物车项 #FFFFFF {
+  + 数量 : int
+  + 已选规格 : List
+}
+class 订单 #FFFFFF {
+  + 订单号 : String
+  + 下单时间 : DateTime
+  + 商品金额 : Decimal
+  + 打包费 : Decimal
+  + 配送费 : Decimal
+  + 优惠金额 : Decimal
+  + 实付金额 : Decimal
+  + 状态 : 订单状态
+  + 备注 : String
+  + 预计送达 : DateTime
+  + 计算金额() : Decimal
+  + 变更状态(新状态) : bool
+  + 申请退款(原因) : 退款单
+}
+class 订单项 #FFFFFF {
+  + 菜品名称 : String
+  + 单价 : Decimal
+  + 数量 : int
+  + 小计 : Decimal
+}
+class 支付记录 #FFFFFF {
+  + 支付方式 : 模拟支付
+  + 支付流水号 : String
+  + 支付时间 : DateTime
+  + 支付金额 : Decimal
+  + 发起支付() : bool
+  + 退款() : bool
+}
+enum 订单状态 #FFFFFF {
+  待支付
+  待接单
+  制作中
+  待配送
+  配送中
+  已送达
+  已完成
+  已取消
+  退款中
+  已退款
+  配送失败
+}
+
+class 配送单 #F2FBF6 {
+  + 配送单号 : String
+  + 取餐点 : String
+  + 送达点 : String
+  + 距离 : float
+  + 运费 : Decimal
+  + 状态 : 待抢单/已接单/已取餐/已送达/配送失败
+  + 抢单(配送员) : bool
+  + 上报异常(原因) : void
+}
+
+class 退款单 #FDF7FA {
+  + 退款原因 : String
+  + 可退金额 : Decimal
+  + 责任方 : 顾客/商家/配送员/平台
+  + 申请时间 : DateTime
+  + 处理时限 : DateTime
+  + 商家处理(同意, 意见) : void
+  + 自动同意() : void
+  + 平台仲裁(结论) : void
+}
+
+用户 <|-- 顾客
+用户 <|-- 商家
+用户 <|-- 配送员
+用户 <|-- 平台管理员
+
+顾客 "1" o-- "0..*" 地址 : 维护
+顾客 "1" *-- "1" 购物车
+购物车 "1" *-- "0..*" 购物车项
+购物车项 "0..*" --> "1" 菜品
+
+顾客 "1" --> "0..*" 订单 : 下单
+订单 "1" *-- "1..*" 订单项
+订单项 "0..*" --> "1" 菜品
+订单 "0..*" --> "1" 店铺
+订单 "1" --> "0..1" 支付记录
+订单 "1" --> "0..1" 评价
+订单 --> 订单状态
+
+商家 "1" -- "1" 店铺
+店铺 "1" *-- "1..*" 菜品分类
+菜品分类 "1" o-- "0..*" 菜品
+
+订单 "1" --> "0..1" 配送单
+配送员 "1" --> "0..*" 配送单 : 抢单/执行
+订单 "1" --> "0..1" 退款单
+
+平台管理员 ..> 退款单 : 仲裁
+平台管理员 ..> 用户 : 冻结
+
+legend bottom
+  颜色说明：浅橙＝用户与权限　浅蓝＝商家与菜单　白色＝交易与订单　浅绿＝配送　浅粉＝售后
+endlegend
+
+note bottom of 菜品
+  库存为 0 时状态自动置为「售罄」，
+  顾客端不可下单；提交订单时再次
+  校验库存，避免超卖。
+end note
+
+note bottom of 退款单
+  「制作中」之后的订单顾客不能直接取消，
+  须走退款流程；商家 10 分钟未处理则系统
+  自动同意，责任方可影响商家 / 骑手评分。
+end note
+
+@enduml

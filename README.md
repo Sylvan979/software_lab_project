@@ -7,6 +7,10 @@
 - 数据存储：JSON 文件（`data/platform.json`），原子写入，模拟数据库
 - 测试：`python -m unittest discover -s tests -v`
 
+## 实验二设计资料
+
+`design/lab2/` 保存实验二（UML 建模与界面原型）的交付物：7 张 UML 图（`.puml` 源文件与 `.png`）、12 张界面设计稿和设计报告 PDF，详见 [design/lab2/README.md](design/lab2/README.md)。
+
 ## 快速开始
 
 ```powershell

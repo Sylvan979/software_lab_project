@@ -1,0 +1,91 @@
+@startuml
+skinparam dpi 150
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontSize 12
+skinparam roundCorner 10
+skinparam arrowColor #7A8291
+skinparam usecase {
+  BackgroundColor #FFF7F3
+  BorderColor #F3C7B1
+  FontColor #15171C
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #9AA1AE
+  FontColor #15171C
+}
+skinparam rectangleBorderColor #D8DCE3
+skinparam rectangleBackgroundColor #FCFCFD
+skinparam nodesep 18
+skinparam ranksep 40
+
+title 图4　用例图 —— 四类角色的系统功能边界
+
+actor "顾客" as C
+actor "商家" as M
+actor "配送员" as R
+actor "平台管理员" as A
+
+rectangle "城市外卖点餐与配送平台" {
+  rectangle "顾客功能" #FFFDFC {
+    usecase "浏览店铺与菜品" as U1
+    usecase "加入购物车并结算" as U2
+    usecase "模拟支付" as U3
+    usecase "跟踪配送进度" as U4
+    usecase "申请退款" as U5
+    usecase "评价订单" as U6
+    usecase "维护收货地址" as U7
+  }
+  rectangle "商家功能" #F8FBFF {
+    usecase "接单 / 拒单" as U8
+    usecase "菜品与库存管理" as U9
+    usecase "标记出餐" as U10
+    usecase "调整营业状态" as U11
+    usecase "处理退款申请" as U12
+  }
+  rectangle "配送功能" #F6FDF9 {
+    usecase "抢单" as U13
+    usecase "确认取餐 / 送达" as U14
+    usecase "上报配送异常" as U15
+    usecase "查询收入与订单" as U16
+  }
+  rectangle "平台管理功能" #FBFAFF {
+    usecase "审核商家入驻" as U17
+    usecase "仲裁退款争议" as U18
+    usecase "查看运营看板" as U19
+    usecase "冻结 / 解冻账号" as U20
+    usecase "查询操作日志" as U21
+  }
+}
+
+C --> U1
+C --> U2
+C --> U4
+C --> U5
+C --> U6
+C --> U7
+
+M --> U8
+M --> U9
+M --> U10
+M --> U11
+M --> U12
+
+R --> U13
+R --> U14
+R --> U15
+R --> U16
+
+A --> U17
+A --> U18
+A --> U19
+A --> U20
+A --> U21
+
+U2 ..> U3 : <<include>>
+U5 ..> U12 : <<include>>
+U12 <.. U18 : <<extend>>\n商家超时未处理
+
+@enduml
