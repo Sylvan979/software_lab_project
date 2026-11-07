@@ -1,0 +1,117 @@
+@startuml
+skinparam dpi 150
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam arrowColor #7A8291
+skinparam activity {
+  BackgroundColor #FFF7F3
+  BorderColor #F3C7B1
+  FontColor #15171C
+  DiamondBackgroundColor #FFFFFF
+  DiamondBorderColor #C9CFD8
+}
+skinparam swimlane {
+  BorderColor #D8DCE3
+  TitleFontColor #15171C
+  TitleBackgroundColor #F5F6F8
+}
+
+title 图5　活动图 —— 「下单到送达」主流程（含异常分支）
+
+|顾客|
+start
+:进入店铺浏览菜品;
+:加入购物车;
+:进入结算页;
+
+|系统|
+:校验库存与配送范围;
+if (存在售罄商品?) then (是)
+  :自动移除并提示;
+  |顾客|
+  :确认剩余商品;
+  |系统|
+else (否)
+endif
+
+|顾客|
+:填写备注 / 选择送达时间;
+:提交订单;
+
+|系统|
+:生成订单（待支付）;
+:调用模拟支付;
+if (支付成功?) then (是)
+  |系统|
+  :订单状态 → 待接单;
+  :向商家端推送新订单;
+  :启动 10 分钟接单倒计时;
+else (否)
+  |系统|
+  :订单置为「已取消」;
+  |顾客|
+  :重新支付或放弃;
+  stop
+endif
+
+|商家|
+if (是否接单?) then (拒单)
+  |系统|
+  :全额退款并通知顾客;
+  stop
+else if (超时未处理?) then (是)
+  |系统|
+  :自动取消订单并全额退款;
+  :商家超时次数 +1;
+  stop
+else (接单)
+  |商家|
+  :标记「制作中」;
+  :备餐制作;
+  :标记「出餐完成」;
+endif
+
+|系统|
+:订单状态 → 待配送;
+:进入配送池并派单;
+
+|配送员|
+if (是否抢单?) then (否)
+  |系统|
+  :3 分钟内无人接单则扩大派单范围;
+  :仍无人接单则转人工调度;
+  stop
+else (是)
+  |配送员|
+  :到店核对餐品并拍照;
+  :确认取餐;
+endif
+
+|配送员|
+:前往送达;
+if (能否送达?) then (是)
+  |配送员|
+  :放置指定位置 / 顾客签收;
+  :确认送达;
+  |系统|
+  :订单状态 → 已送达;
+  :结算配送费与商家账目;
+  |顾客|
+  :确认收货并评价;
+  |系统|
+  :订单状态 → 已完成;
+  stop
+else (否)
+  |配送员|
+  :在 App 内上报异常原因;
+  |系统|
+  :订单进入「配送失败」;
+  :通知平台调度处理;
+  :顾客可选择重派 / 退款;
+  stop
+endif
+
+@enduml
